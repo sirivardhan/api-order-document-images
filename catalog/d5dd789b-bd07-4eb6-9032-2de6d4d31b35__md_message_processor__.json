@@ -1,0 +1,16 @@
+{
+    "inputMessageMetadata": {
+        "messagePayload": {
+            "connectorName": "#_custom_mule_metadata_type_#",
+            "typeId": "Actual_IPM_response"
+        }
+    },
+    "outputMessageMetadata": {
+        "messagePayload": {
+            "connectorName": "#_custom_mule_metadata_type_#",
+            "typeId": "obtainIPM-response"
+        }
+    },
+    "id": "d5dd789b-bd07-4eb6-9032-2de6d4d31b35",
+    "version": "5.2.0.0"
+}

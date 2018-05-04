@@ -1,0 +1,35 @@
+[
+  {
+    "customerPONumber": "91913",
+    "docType": "AKN",
+    "documentURLs": [
+      {
+        "documentURL": "http://CBIGDC-PIPMW002.cbi.net/ibpmdata/IBPMSessionData/_BA2656A2_CCA9_4957_A521_F9AED9F44BC7__6295674/AcordeContextExport/imgE30/imgE31.jpg"
+      }
+    ],
+    "invoiceNumber": "0",
+    "orderNumber": "9266953"
+  },
+  {
+    "customerPONumber": "91913",
+    "docType": "ASN",
+    "documentURLs": [
+      {
+        "documentURL": "http://CBIGDC-PIPMW002.cbi.net/ibpmdata/IBPMSessionData/_BA2656A2_CCA9_4957_A521_F9AED9F44BC7__6295674/AcordeContextExport/imgE32/imgE33.jpg"
+      }
+    ],
+    "invoiceNumber": "0",
+    "orderNumber": "9266953"
+  },
+  {
+    "customerPONumber": "91913",
+    "docType": "INV",
+    "documentURLs": [
+      {
+        "documentURL": "http://CBIGDC-PIPMW002.cbi.net/ibpmdata/IBPMSessionData/_BA2656A2_CCA9_4957_A521_F9AED9F44BC7__6295674/AcordeContextExport/imgE34/imgE35.jpg"
+      }
+    ],
+    "invoiceNumber": "7328967",
+    "orderNumber": "9266953"
+  }
+]

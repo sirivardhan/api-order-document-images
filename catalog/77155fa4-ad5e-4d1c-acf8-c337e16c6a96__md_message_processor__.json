@@ -1,0 +1,11 @@
+{
+    "inputMessageMetadata": {},
+    "outputMessageMetadata": {
+        "messagePayload": {
+            "connectorName": "#_custom_mule_metadata_type_#",
+            "typeId": "IPM-service-request"
+        }
+    },
+    "id": "77155fa4-ad5e-4d1c-acf8-c337e16c6a96",
+    "version": "5.2.0.0"
+}

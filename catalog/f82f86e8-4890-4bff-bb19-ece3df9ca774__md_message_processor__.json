@@ -1,0 +1,11 @@
+{
+    "inputMessageMetadata": {},
+    "outputMessageMetadata": {
+        "messagePayload": {
+            "connectorName": "#_custom_mule_metadata_type_#",
+            "typeId": "obtainPdf"
+        }
+    },
+    "id": "f82f86e8-4890-4bff-bb19-ece3df9ca774",
+    "version": "5.2.0.0"
+}

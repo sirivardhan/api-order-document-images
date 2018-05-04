@@ -1,0 +1,111 @@
+#%RAML 1.0
+title: Order Document Images
+version: 1.0-dev
+baseUri: https://api-order-document-images-dev.cloudhub.io/api/v1
+description: This API returns Array of documentURL's and PDF as an attachement.
+types:
+  error: !include schemas/error-schema.json
+  
+securitySchemes:
+  cbi_edge_auth:
+    description: A scheme utilizing a Client ID and Secret sent as HTTP headers
+    type: x-cbi-edge-auth
+    describedBy:
+      headers:
+        client_id:
+          type: string
+          displayName: Client ID
+          description: The client's unique identifier
+          required: true
+          example: '111eeefff9988'
+        client_secret:
+          type: string
+          displayName: Client Secret
+          description: The client secret providing access to the API
+          required: true
+          example: '1234567890abcdef'
+      responses:
+        401:
+          description: Invalid credentials
+          body:
+            application/json:
+              type: error
+        403:
+          description: Resource is forbidden to current user
+          body:
+            application/json:
+              type: error
+securedBy: [cbi_edge_auth]
+
+/documents :   
+    get:
+      description: This resource retrieves an order's details information.
+      queryParameters:
+        orderNumber:
+          type: string
+          description: order Number
+          example: '11111'
+          required: true
+        invoiceNumber:
+          type: string
+          description: invoice Number
+          example: '11111'
+          required: false
+        customerPoNumber:
+          type: string
+          description: customer PO number
+          example: '1111'
+          required: false
+        soldToDistributorNumber:
+          type: string
+          description: soldTo distributor Number
+          example: '1111'
+          required: false
+        imageDocumentType:
+          type: string
+          description: image Type
+          example: '111111'
+          required: false  
+      responses:
+        200:
+          body:
+            application/json:
+              schema: !include schemas/obtainIPM_get_response_schema.json
+              example: !include examples/obtainIPM_get_response_example.json
+        404:
+          body:
+            application/json:
+              type: error
+        405:
+          body:
+            application/json:
+              type: error
+        415:
+          body:
+            application/json:
+              type: error
+        406:
+          body:
+            application/json:
+              type: error
+        400:
+          body:
+            application/json:
+              type: error
+              
+/documentImage:
+    post:
+      displayName: Return a PDF attached.
+      description: Accepts a single document URL and returns a PDF attachment.
+      body:
+        application/json:
+          schema: !include schemas/documentImage_post_request_schema.json
+          example: !include examples/documentImage_post_request_example.json
+      responses:
+        200:
+          body:
+            multipart/form-data:
+              
+            
+                  
+

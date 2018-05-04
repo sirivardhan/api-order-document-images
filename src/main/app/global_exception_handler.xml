@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:apikit-soap="http://www.mulesoft.org/schema/mule/apikit-soap" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:context="http://www.springframework.org/schema/context" xmlns:cloudhub="http://www.mulesoft.org/schema/mule/cloudhub"
+	xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/cloudhub http://www.mulesoft.org/schema/mule/cloudhub/current/mule-cloudhub.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-current.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/apikit-soap http://www.mulesoft.org/schema/mule/apikit-soap/current/mule-apikit-soap.xsd">
+    
+  <choice-exception-strategy name="global-exception-handlerChoice_Exception_Strategy">
+  	<catch-exception-strategy when="#[exception.causedBy(com.cbrands.mule.errors.RoutingException)]" doc:name="Routing Exception">
+  		<logger message="Network Exception" level="INFO" doc:name="Log Exception to Console"/>
+		<expression-component doc:name="Set Exception Details"><![CDATA[flowVars.exceptionClass = 'NETWORK_EXCEPTION';
+flowVars.exceptionObject = exception.cause != null ? exception.cause : exception;
+flowVars.exceptionCode = ['ERR404'];
+flowVars.exceptionMessage =  exception.cause != null ? exception.cause.message : exception.message;
+flowVars.exceptionHTTPStatus = 404;
+flowVars.docname = exception.info.Element.lastIndexOf('(') > 0 ? exception.info.Element.substring(exception.info.Element.lastIndexOf('(')+1, exception.info.Element.indexOf(')')) : 'not defined';]]></expression-component>
+    	<flow-ref name="exception-routesSub_Flow" doc:name="exception-routesSub_Flow"/>
+  	</catch-exception-strategy>
+
+	<catch-exception-strategy when="#[exception.causedBy(java.net.ConnectException) || exception.causedBy(java.util.concurrent.TimeoutException) ]" doc:name="Network Exception">
+		<logger message="Network Exception" level="INFO" doc:name="Log Exception to Console"/>
+		<expression-component doc:name="Set Exception Details"><![CDATA[flowVars.exceptionClass = 'NETWORK_EXCEPTION';
+flowVars.exceptionObject = exception.cause != null ? exception.cause : exception;
+flowVars.exceptionCode = ['ERR001'];
+flowVars.exceptionMessage =  exception.cause != null ? exception.cause.message : exception.message;
+flowVars.exceptionHTTPStatus = 400;
+flowVars.docname = exception.info.Element.lastIndexOf('(') > 0 ? exception.info.Element.substring(exception.info.Element.lastIndexOf('(')+1, exception.info.Element.indexOf(')')) : 'not defined';]]></expression-component>
+		<flow-ref name="exception-routesSub_Flow" doc:name="exception-routesSub_Flow"/>
+	</catch-exception-strategy>
+        
+	<catch-exception-strategy when="#[exception.causeMatches('com.sforce.*')]" doc:name="Salesforce Common Exception">
+		<logger message="Network Exception" level="INFO" doc:name="Log Exception to Console"/>
+		<expression-component doc:name="Set Exception Details"><![CDATA[flowVars.exceptionClass = 'SALESFORCE_EXCEPTION';
+flowVars.exceptionObject = exception.cause != null ? exception.cause : exception;
+flowVars.exceptionCode = ['SFC001'];
+flowVars.exceptionMessage =  exception.cause != null ? exception.cause.message : exception.message;
+flowVars.exceptionHTTPStatus = 400;
+flowVars.docname = exception.info.Element.lastIndexOf('(') > 0 ? exception.info.Element.substring(exception.info.Element.lastIndexOf('(')+1, exception.info.Element.indexOf(')')) : 'not defined';]]></expression-component>
+		<flow-ref name="exception-routesSub_Flow" doc:name="exception-routesSub_Flow"/>
+	</catch-exception-strategy>
+        
+	<catch-exception-strategy when="#[exception.causedBy(com.mulesoft.weave.mule.exception.WeaveExecutionException)]" doc:name="Dataweave Exception">
+		<logger message="Dataweave Exception" level="INFO" doc:name="Log Exception to Console"/>
+		<expression-component doc:name="Set Exception Details"><![CDATA[flowVars.exceptionClass = 'DW_EXCEPTION';
+flowVars.exceptionObject = exception.cause != null ? exception.cause : exception;
+flowVars.exceptionCode = ['ERR002'];
+flowVars.exceptionMessage =  exception.cause != null ? exception.cause.message : exception.message;
+flowVars.exceptionHTTPStatus =500;
+flowVars.docname = exception.info.Element.lastIndexOf('(') > 0 ? exception.info.Element.substring(exception.info.Element.lastIndexOf('(')+1, exception.info.Element.indexOf(')')) : 'not defined';
+]]></expression-component>
+		<flow-ref name="exception-routesSub_Flow" doc:name="exception-routesSub_Flow"/>
+	</catch-exception-strategy>
+        
+	<catch-exception-strategy when="#[exception.causedBy(org.mule.extension.validation.api.ValidationException) &amp;&amp; exception.message contains 'APT']" doc:name="Salesforce Response Validation Error">
+		<logger message="Non Retriable Business Exception" level="INFO" doc:name="Log Exception to Console"/>
+		<expression-component doc:name="Set Exception Details"><![CDATA[flowVars.exceptionClass = 'SALESFORCE_EXCEPTION';
+flowVars.exceptionObject = exception.cause != null ? exception.cause : exception;
+flowVars.exceptionCode = exception.cause.message.?split(';');
+flowVars.exceptionMessage = exception.muleMessage.payload[0].errors[0].statusCode + ':' + exception.muleMessage.payload[0].errors[0].message;
+flowVars.exceptionHTTPStatus =500;
+flowVars.docname = exception.info.Element.lastIndexOf('(') > 0 ? exception.info.Element.substring(exception.info.Element.lastIndexOf('(')+1, exception.info.Element.indexOf(')')) : 'Salesforce Response Validation';]]></expression-component>
+		<flow-ref name="exception-routesSub_Flow" doc:name="exception-routesSub_Flow"/>
+	</catch-exception-strategy>
+        
+	<catch-exception-strategy when="#[exception.causedBy(org.mule.extension.validation.api.ValidationException) ]" doc:name="Non Retriable Business Exception">
+		<logger message="Non Retriable Business Exception" level="INFO" doc:name="Log Exception to Console"/>
+		<expression-component doc:name="Set Exception Details"><![CDATA[flowVars.exceptionClass = 'BUSINESS_EXCEPTION';
+flowVars.exceptionObject = exception.cause != null ? exception.cause : exception;
+flowVars.exceptionCode = exception.cause.message.?split(';');
+flowVars.exceptionMessage =  exception.cause != null ? exception.cause.message : exception.message;
+flowVars.exceptionHTTPStatus =500;
+flowVars.docname = exception.info.Element.lastIndexOf('(') > 0 ? exception.info.Element.substring(exception.info.Element.lastIndexOf('(')+1, exception.info.Element.indexOf(')')) : 'Message Validation';]]></expression-component>
+		<flow-ref name="exception-routesSub_Flow" doc:name="exception-routesSub_Flow"/>
+	</catch-exception-strategy>
+        
+	<catch-exception-strategy when="#[exception.causedBy(org.mule.module.http.internal.request.ResponseValidatorException)]" doc:name="HTTP Response Exception">
+		<logger message="Non Retriable Business Exception. Payload is #[payload]" level="INFO" doc:name="Log Exception to Console"/>
+		<expression-component doc:name="Set Exception Details"><![CDATA[flowVars.exceptionClass = 'BUSINESS_EXCEPTION';
+flowVars.exceptionObject = exception.cause != null ? exception.cause : exception;
+flowVars.exceptionCode = ['ERR003'];
+flowVars.exceptionMessage =  exception.cause != null ? exception.cause.message : exception.message;
+flowVars.exceptionHTTPStatus =500;
+flowVars.docname = exception.info.Element.lastIndexOf('(') > 0 ? exception.info.Element.substring(exception.info.Element.lastIndexOf('(')+1, exception.info.Element.indexOf(')')) : 'Message Validation';]]></expression-component>
+		<flow-ref name="exception-routesSub_Flow" doc:name="exception-routesSub_Flow"/>
+	</catch-exception-strategy>
+        
+	<catch-exception-strategy when="#[exception.causedBy(org.mule.module.apikit.exception.InvalidHeaderException)]" doc:name="Bad Request Exception">
+		<logger message="Network Exception" level="INFO" doc:name="Log Exception to Console"/>
+		<expression-component doc:name="Set Exception Details"><![CDATA[flowVars.exceptionClass = 'NETWORK_EXCEPTION';
+flowVars.exceptionObject = exception.cause != null ? exception.cause : exception;
+flowVars.exceptionCode = ['ERR400'];
+flowVars.exceptionMessage =  exception.cause != null ? exception.cause.message : exception.message;
+flowVars.exceptionHTTPStatus = 400;
+flowVars.docname = exception.info.Element.lastIndexOf('(') > 0 ? exception.info.Element.substring(exception.info.Element.lastIndexOf('(')+1, exception.info.Element.indexOf(')')) : 'not defined';]]></expression-component>
+		<flow-ref name="exception-routesSub_Flow" doc:name="exception-routesSub_Flow"/>
+	</catch-exception-strategy>
+        <catch-exception-strategy when="#[exception.causeMatches('org.mule.module.apikit.exception.*')]" doc:name="APIKit Exception">
+            <logger message="APIKit Exception: #[exception.message]" level="ERROR" doc:name="Logger Exception to Console"/>
+            <expression-component doc:name="Set APIKit Exception Details"><![CDATA[flowVars.exceptionClass = 'HTTP_LISTENER_EXCEPTION';
+flowVars.exceptionObject = exception.cause != null ? exception.cause : exception;
+flowVars.docname = exception.info.Element.lastIndexOf('(') > 0 ? exception.info.Element.substring(exception.info.Element.lastIndexOf('(')+1, exception.info.Element.indexOf(')')) : 'not defined';
+
+if(exception.causedBy(org.mule.module.apikit.exception.NotFoundException)) {
+	flowVars.exceptionHTTPStatus = 404;
+	flowVars.exceptionCode = ['ERR404'];
+	flowVars.exceptionMessage = 'Resource not found: ' + message.inboundProperties.'http.request.uri';
+}
+else if(exception.causedBy(org.mule.module.apikit.exception.BadRequestException)) {
+	flowVars.exceptionHTTPStatus = 400;
+	flowVars.exceptionCode = ['ERR400'];
+	flowVars.exceptionMessage = 'The provided payload did not conform to the required format.';
+}
+else if(exception.causedBy(org.mule.module.apikit.exception.MethodNotAllowedException)) {
+	flowVars.exceptionHTTPStatus = 405;
+	flowVars.exceptionCode = ['ERR405'];
+	flowVars.exceptionMessage = 'Method not allowed: ' + message.inboundProperties.'http.method';
+}
+else if(exception.causedBy(org.mule.module.apikit.exception.NotAcceptableException)) {
+	flowVars.exceptionHTTPStatus = 406;
+	flowVars.exceptionCode = ['ERR406'];
+	flowVars.exceptionMessage = 'Not acceptable';
+}
+else if(exception.causedBy(org.mule.module.apikit.exception.UnsupportedMediaTypeException)) {
+	flowVars.exceptionHTTPStatus = 415;
+	flowVars.exceptionCode = ['ERR415'];
+	flowVars.exceptionMessage = 'Unsupported media type';
+}
+else {
+	flowVars.exceptionHTTPStatus = 500;
+	flowVars.exceptionCode = ['unknown'];
+	flowVars.exceptionMessage =  exception.cause != null ? exception.cause.message : exception.message;
+}
+
+
+]]></expression-component>
+            <flow-ref name="exception-routesSub_Flow" doc:name="exception-routesSub_Flow"/>
+        </catch-exception-strategy>
+        <catch-exception-strategy doc:name="Default Exception Handler">
+            <logger message="Default exception handler catch all." level="ERROR" doc:name="Log Default Catch-All to Console"/>
+            <expression-component doc:name="Set Exception Details"><![CDATA[flowVars.exceptionClass = 'UNKNOWN_EXCEPTION';
+flowVars.exceptionObject = exception.cause != null ? exception.cause : exception;
+flowVars.exceptionCode = ['unknown'];
+flowVars.exceptionMessage =  exception.cause != null ? exception.cause.message : exception.message;
+flowVars.exceptionHTTPStatus =500;
+flowVars.docname = exception.info.Element.lastIndexOf('(') > 0 ? exception.info.Element.substring(exception.info.Element.lastIndexOf('(')+1, exception.info.Element.indexOf(')')) : 'not defined';]]></expression-component>
+            <flow-ref name="exception-routesSub_Flow" doc:name="exception-routesSub_Flow"/>
+        </catch-exception-strategy>
+
+	</choice-exception-strategy>
+
+    <sub-flow name="exception-routesSub_Flow">
+        <logger message="Exception type: #[flowVars.exceptionClass]#['\n']Message Id: #[sessionVars.messageId]#['\n']#[sessionVars.httpMethod] #[sessionVars.httpUri]#['\n']Querey params: #[sessionVars.httpQueryString]#['\n']Payload: #[payload]" level="ERROR" doc:name="Log Error to Console"/>
+        <message-properties-transformer doc:name="Add to Header Properties">
+            <add-message-property key="EXCEPTION_MESSAGE" value="#[flowVars.exceptionClass + &quot;:&quot; + flowVars.exceptionObject.message]"/>
+            <add-message-property key="http.status" value="#[flowVars.exceptionHTTPStatus]"/>
+            <delete-message-property key="Content-Type"/>
+        </message-properties-transformer>
+        <choice tracking:enable-default-events="true" doc:name="Choice">
+            <when expression="#[flowVars.ResponseContentType contains &quot;xml&quot;]">
+                <dw:transform-message doc:name="Payload as XML">
+                    <dw:set-payload resource="classpath:dwl/set-payload-as-xml.dwl"/>
+                </dw:transform-message>
+            </when>
+            <when expression="#[flowVars.ResponseContentType contains &quot;json&quot;]">
+
+                <dw:transform-message doc:name="Payload as JSON">
+                    <dw:set-payload resource="classpath:dwl/set-payload-as-json.dwl"/>
+                </dw:transform-message>
+            </when>
+            <otherwise>
+                <dw:transform-message doc:name="Transform Message">
+                    <dw:set-payload resource="classpath:dwl/set-payload-as-json.dwl"/>
+                </dw:transform-message>
+            </otherwise>
+        </choice>
+        <logger message="**ExceptionLog** #[message.payloadAs(String)]" level="ERROR" doc:name="Logger"/>
+
+
+    </sub-flow>
+</mule>

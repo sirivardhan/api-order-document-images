@@ -1,0 +1,51 @@
+machine:
+  # set java version to 8
+  java:
+    version: openjdk8
+
+  # For Newman/Postman
+  node:
+    version: 6.9.5
+
+  environment:
+      _JAVA_OPTIONS: "-Xms128m -Xmx512m"
+          
+#dependencies
+dependencies:
+   override:
+    - mvn --fail-never dependency:go-offline -s settings.xml || true
+    
+#test
+test:
+  override:
+    # build package, unit test and deploy to cloud hub dev environment
+    - if [ $CIRCLE_BRANCH != 'master' ]; then mvn clean test -s settings.xml -Dkey=$key; fi
+    - if [ $CIRCLE_BRANCH = 'master' ]; then mvn clean test -s settings.xml -Dmule.env=prod -Dkey=$prod_key; fi
+
+deployment:
+# deploy to Dev Environment
+  development:
+    branch: develop
+    commands:
+      - mvn clean package mule:deploy -Denvironment=Development -DapplicationName=api-order-document-images-dev -DworkerType=Micro -s settings.xml -Dmule.env=dev -Dkey=$key
+      # set pause time to wait for cloud deployment complete
+      - sleep 5m
+      # Run integration testing using maven plugin
+      - mvn integration-test -s settings.xml -Dkey=$key
+      # Store unit and integration testing results
+      - mkdir -p $CIRCLE_TEST_REPORTS/munit/
+      - mkdir -p $CIRCLE_TEST_REPORTS/int/
+      - find . -type f -regex ".*/target/surefire-reports/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/munit/ \;
+      - find . -type f -regex ".*/target/munit-reports/coverage/.*html" -exec cp {} $CIRCLE_TEST_REPORTS/munit/ \;
+      - find . -type f -regex ".*/target/failsafe-reports/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/int/ \;
+  test:
+    # deploy to Test Environment
+    branch: test
+    commands:
+      - mvn clean package mule:deploy -Denvironment=Test -DapplicationName=api-order-document-images-test -DworkerType=Micro -s settings.xml -Dmule.env=test -Dkey=$key
+
+  production:
+    branch: master
+    commands:
+      - mvn clean package mule:deploy -Denvironment=Production -DapplicationName=api-order-document-images-prod -DworkerType=Micro -s settings.xml -Dmule.env=prod -Dkey=$prod_key
+      

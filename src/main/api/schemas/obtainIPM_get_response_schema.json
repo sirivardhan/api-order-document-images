@@ -1,0 +1,67 @@
+{
+  "$id": "http://example.com/example.json",
+  "type": "array",
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "items": {
+    "$id": "http://example.com/example.json/items",
+    "type": "object",
+    "properties": {
+      "orderNumber": {
+        "$id": "http://example.com/example.json/items/properties/orderNumber",
+        "type": "string",
+        "title": "The Ordernumber Schema ",
+        "default": "",
+        "examples": [
+          "9266953"
+        ]
+      },
+      "customerPONumber": {
+        "$id": "http://example.com/example.json/items/properties/customerPONumber",
+        "type": "string",
+        "title": "The Customerponumber Schema ",
+        "default": "",
+        "examples": [
+          "91913"
+        ]
+      },
+      "invoiceNumber": {
+        "$id": "http://example.com/example.json/items/properties/invoiceNumber",
+        "type": "string",
+        "title": "The Invoicenumber Schema ",
+        "default": "",
+        "examples": [
+          "NV-12345"
+        ]
+      },
+      "docType": {
+        "$id": "http://example.com/example.json/items/properties/docType",
+        "type": "string",
+        "title": "The Doctype Schema ",
+        "default": "",
+        "examples": [
+          "AKN"
+        ]
+      },
+      "documentURLs": {
+        "$id": "http://example.com/example.json/items/properties/documentURLs",
+        "type": "array",
+        "items": {
+          "$id": "http://example.com/example.json/items/properties/documentURLs/items",
+          "type": "object",
+          "properties": {
+            "documentURL": {
+              "$id": "http://example.com/example.json/items/properties/documentURLs/items/properties/documentURL",
+              "type": "string",
+              "title": "The Documenturl Schema ",
+              "default": "",
+              "examples": [
+                "http://CBIGDCPIPMW002.cbi.net/ibpmdata/IBPMSessionData/_B85244DB_8286_4DB7_98A7_9BEBFDB 7D90B__6200180/AcordeContextExport/img810/img811.jpg"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

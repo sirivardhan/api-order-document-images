@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:spring="http://www.springframework.org/schema/beans" xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/apikit http://www.mulesoft.org/schema/mule/apikit/current/mule-apikit.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd">
+    <flow name="order-document-images-main">
+        <http:listener config-ref="order-document-images-httpListenerConfig" path="/api/v1/*" doc:name="HTTP" />
+        <apikit:router config-ref="order-document-images-config" doc:name="APIkit Router" />
+        <exception-strategy ref="order-document-images-apiKitGlobalExceptionMapping" doc:name="Reference Exception Strategy" />
+    </flow>
+    <flow name="order-document-images-console">
+        <http:listener config-ref="order-document-images-httpListenerConfig" path="/console/*" doc:name="HTTP" />
+        <apikit:console config-ref="order-document-images-config" doc:name="APIkit Console" />
+    </flow>
+    <flow name="get:/documents:order-document-images-config">
+        <logger message="Request Received, order Number:: #[message.inboundProperties.'http.query.params'.orderNumber]" level="INFO" doc:name="Log request" />
+        <expression-component doc:name="Set FlowVariables"><![CDATA[flowVars.orderNumber= message.inboundProperties.'http.query.params'.orderNumber;
+flowVars.docType=message.inboundProperties.'http.query.params'.imageDocumentType;
+flowVars.customerPONumber=message.inboundProperties.'http.query.params'.customerPoNumber;
+flowVars.soldTo=message.inboundProperties.'http.query.params'.soldToDistributorNumber;
+flowVars.invoiceNumber=message.inboundProperties.'http.query.params'.invoiceNumber;]]></expression-component>
+
+        <dw:transform-message doc:name="ObtainIPM Request Transformer" metadata:id="77155fa4-ad5e-4d1c-acf8-c337e16c6a96">
+            <dw:set-payload resource="classpath:dwl/obtainIPM_Request.dwl"/>
+
+        </dw:transform-message>
+        <http:request config-ref="IPM_request_config" path="/ObtainIPM" method="POST" doc:name="Obtain IPM service"/>
+
+        <dw:transform-message doc:name="ObtainIPM Response Transformer" metadata:id="d5dd789b-bd07-4eb6-9032-2de6d4d31b35">
+            <dw:input-payload mimeType="application/json" doc:sample="ObtainIPM_response.json"/>
+            <dw:set-payload resource="classpath:dwl/obtainIPM_Response.dwl"/>
+
+        </dw:transform-message>
+        <dw:transform-message doc:name="Trim Response">
+            <dw:set-payload resource="classpath:dwl/trimResponse.dwl"/>
+
+        </dw:transform-message>
+        <logger level="INFO" doc:name="Log Response" message="IPM service Response #[payload:java.lang.String]"/>
+
+        <!--  <exception-strategy ref="global-exception-handlerChoice_Exception_Strategy" doc:name="Reference Exception Strategy"/> -->
+    </flow>
+    <flow name="post:/documentImage:application/json:order-document-images-config">
+        <logger level="INFO" doc:name="Log Request" message="Request Received #[payload:java.lang.String]" />
+        <dw:transform-message doc:name="ObtainPDF Request Transformer" metadata:id="f82f86e8-4890-4bff-bb19-ece3df9ca774">
+            <dw:set-payload resource="classpath:dwl/obtainPDF_Request.dwl"/>
+
+        </dw:transform-message>
+        <http:request config-ref="IPM_request_config" path="/ObtainIPM/ObtainPDF" method="POST" doc:name="Obtain PDF Service"/>
+        <set-payload value="#[payload]" mimeType="application/pdf" doc:name="Set PDF payload"/>
+        <logger level="INFO" doc:name="Log Response"/>
+
+        <exception-strategy ref="global-exception-handlerChoice_Exception_Strategy" doc:name="Reference Exception Strategy" />
+    </flow>
+    <apikit:mapping-exception-strategy name="order-document-images-apiKitGlobalExceptionMapping">
+        <apikit:mapping statusCode="404">
+            <apikit:exception value="org.mule.module.apikit.exception.NotFoundException" />
+            <set-property propertyName="Content-Type" value="application/json" doc:name="Property" />
+            <set-payload value="{ &quot;message&quot;: &quot;Resource not found&quot; }" doc:name="Set Payload" />
+        </apikit:mapping>
+        <apikit:mapping statusCode="405">
+            <apikit:exception value="org.mule.module.apikit.exception.MethodNotAllowedException" />
+            <set-property propertyName="Content-Type" value="application/json" doc:name="Property" />
+            <set-payload value="{ &quot;message&quot;: &quot;Method not allowed&quot; }" doc:name="Set Payload" />
+        </apikit:mapping>
+        <apikit:mapping statusCode="415">
+            <apikit:exception value="org.mule.module.apikit.exception.UnsupportedMediaTypeException" />
+            <set-property propertyName="Content-Type" value="application/json" doc:name="Property" />
+            <set-payload value="{ &quot;message&quot;: &quot;Unsupported media type&quot; }" doc:name="Set Payload" />
+        </apikit:mapping>
+        <apikit:mapping statusCode="406">
+            <apikit:exception value="org.mule.module.apikit.exception.NotAcceptableException" />
+            <set-property propertyName="Content-Type" value="application/json" doc:name="Property" />
+            <set-payload value="{ &quot;message&quot;: &quot;Not acceptable&quot; }" doc:name="Set Payload" />
+        </apikit:mapping>
+        <apikit:mapping statusCode="400">
+            <apikit:exception value="org.mule.module.apikit.exception.BadRequestException" />
+            <set-property propertyName="Content-Type" value="application/json" doc:name="Property" />
+            <set-payload value="{ &quot;message&quot;: &quot;Bad request&quot; }" doc:name="Set Payload" />
+        </apikit:mapping>
+    </apikit:mapping-exception-strategy>
+</mule>
